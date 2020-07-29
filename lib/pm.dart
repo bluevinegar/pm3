@@ -257,7 +257,7 @@ class PM3 {
 
       int delayRestartMs = listenConf.containsKey('exp_backoff_restart_delay')
           ? int.parse(listenConf['exp_backoff_restart_delay'])
-          : 10000;
+          : 500;
 
       bool autoRestart = listenConf.containsKey('autorestart')
           ? listenConf['autorestart']
