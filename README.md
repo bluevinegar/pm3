@@ -15,7 +15,7 @@ You can start the main process in background as the user that you wish to save c
 ```
 nohup pm3 start &
 ```
-Your app is now daemonized, monitored and kept alive forever.
+Your pm3 is now daemonized, monitored and kept alive forever.
 
 
 # Managing Applications
@@ -28,7 +28,7 @@ To list all running applications
 pm3 list
 ```
 
-Managing apps is straightforward:
+Managing apps is straight forward:
 
 ```
 pm3 stop <app_name>|'all'|json_conf
@@ -51,7 +51,7 @@ To restore last saved process:
 
 ```
 pm3 delete all # this will remove all running processes (cannot undo)
-pm3 resurrect# loads saved processers
+pm3 resurrect# loads saved processes
 ```
 
 To view logs:
