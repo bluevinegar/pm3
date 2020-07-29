@@ -74,7 +74,7 @@ pm3 log <app_name>
 
 * TODO
 
-# deploy startup
+# deploy to system startup
 
 ```
 # vi /etc/rc.local
