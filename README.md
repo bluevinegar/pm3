@@ -8,8 +8,11 @@
 
 # TODO
 
-* sometimes restart does not start app
 * memory limit monitoring and restart
+
+# Known bugs
+
+* TODO
 
 # deploy startup
 
