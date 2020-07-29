@@ -1,0 +1,14 @@
+name: pm3
+environment:
+  sdk: ">=2.6.0 <3.0.0"
+dependencies:
+  mutex: ^1.0.3
+  process_run: ^0.10.10+2
+  dart_console: ^0.6.2
+  socket_io: ^0.9.4
+  socket_io_client: ^0.9.10
+  colorize: ^2.0.0
+  stack_trace: ^1.9.3
+  intl: ^0.16.1
+  xml: ^4.2.0
+  timeago: ^2.0.26

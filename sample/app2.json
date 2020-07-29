@@ -1,0 +1,8 @@
+{
+  "name": "sleep",
+  "script": "/usr/bin/sleep",
+  "args": "60",
+  "env": {
+    "ENV": "SG"
+  }
+}
