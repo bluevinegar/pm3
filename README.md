@@ -3,7 +3,7 @@
 # Installing PM3
 
 ```
-wget -qO- https://github.com/bluevinegar/pm3/raw/master/bin/pm3
+wget https://github.com/bluevinegar/pm3/raw/master/bin/pm3
 sudo mv pm3 /usr/bin/
 
 ```
