@@ -10,6 +10,11 @@ main(List<String> args) async {
   final pm = PM3(Platform.environment);
   await pm.init();
   switch (cmd) {
+    case 'boot':
+      final List<String> cmdArgs = args.length > 1 ? args.skip(1).toList() : [];
+      await pm.doBoot(cmdArgs.skip(1).toList());
+      exit(0);
+      break;
     case 'start':
       final List<String> cmdArgs = args.length > 1 ? args.skip(1).toList() : [];
       final app = cmdArgs.length > 0 ? cmdArgs[0] : '';

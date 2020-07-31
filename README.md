@@ -50,9 +50,17 @@ pm3 save
 To restore last saved process:
 
 ```
+pkill pm3
+pm3 boot
+```
+
+or 
+
+```
 pm3 delete all # this will remove all running processes (cannot undo)
 pm3 resurrect# loads saved processes
 ```
+
 
 To view logs:
 

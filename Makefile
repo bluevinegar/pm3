@@ -10,3 +10,5 @@ endif
 	rm -f bin/pm3 | true
 	mv bin/pm3.exe bin/pm3
 
+boot: build
+	bin/pm3 boot

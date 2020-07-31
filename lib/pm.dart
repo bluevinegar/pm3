@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io' show Directory, File, Platform, Process, stdout;
+import 'dart:io'
+    show Directory, File, Platform, Process, ProcessStartMode, sleep, stdout;
 import 'dart:io' as io;
 import 'dart:isolate';
 
@@ -150,6 +151,32 @@ class PM3 {
       socket.disconnect();
     });
     socketHandleList(socket);
+  }
+
+  doBoot(List<String> args) async {
+    final state = await checkState();
+    if (state) {
+      print('doBoot skipping, already running...');
+      return;
+    }
+    try {
+      await Process.start('pm3', ['start'],
+              environment: env, mode: ProcessStartMode.detached)
+          .then((Process proc) async {
+        print("Boot: pm3 booted");
+        await sleep(Duration(seconds: 2));
+        Process.runSync('pm3', ['resurrect']);
+        // proc.stderr.transform(utf8.decoder).listen((data) {
+        //   print('Boot: error: $data');
+        // });
+        // proc.exitCode.then((exitCode) {
+        //   print('Boot: exit: $exitCode');
+        // });
+      });
+    } catch (err) {
+      print("Boot: error: $err");
+      rethrow;
+    }
   }
 
   doStart(String app, List<String> args) async {
