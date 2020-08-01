@@ -146,7 +146,7 @@ class IsolateProcessHandler {
     }
   }
 
-  stop() async {
+  stop({bool end = true}) async {
     final name = config['name'];
     if (!isRunning) {
       print('IPH: $name already ended.');
@@ -162,16 +162,19 @@ class IsolateProcessHandler {
     }
     print('IPH: $name ended.');
     mainSendPort.send('ended');
-    ended = true;
+    state = 'stopped';
+    ended = end;
   }
 
   restart() async {
     final name = config['name'];
+    print('IPH: $name restart ended? ${ended}');
     if (!ended) {
-      print('restart: stopping $name...');
+      print('IPH: $name restart: stopping $name...');
       await stop();
+      ended = true;
     }
-    print('restart: starting $name...');
+    print('IPH: $name restart: starting $name...');
     return await start();
   }
 

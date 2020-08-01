@@ -16,6 +16,7 @@ import 'package:socket_io/socket_io.dart';
 
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:colorize/colorize.dart';
 
 class PM3Process {
   Isolate isolate;
@@ -371,8 +372,9 @@ class PM3 {
           print("mainSendPort done emit log to clients");
         } else if (data.startsWith('logErr:')) {
           await p.handler.logClientHandlers.forEach((LogRequester logClient) {
-            logClient.clientHandler
-                .emit('logErr', data.replaceFirst('log:', ''));
+            final Colorize logLine = Colorize(data.replaceFirst('log:', ''))
+              ..red();
+            logClient.clientHandler.emit('logErr', logLine);
           });
         }
       }
@@ -504,10 +506,10 @@ class PM3 {
       if (processors[c]['name'] == app || app == 'all') {
         processIndex = c;
         processors[processIndex]['status'] = 'stopped';
+        processors[processIndex]['ended'] = false;
         await comm[processors[processIndex]['name']]
             .childSendPort
             .send('restart');
-        processors[processIndex]['ended'] = false;
 
         if (app != 'all') break;
       }
