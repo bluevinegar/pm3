@@ -16,7 +16,6 @@ import 'package:socket_io/socket_io.dart';
 
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:timeago/timeago.dart' as timeago;
-import 'package:colorize/colorize.dart';
 
 class PM3Process {
   Isolate isolate;
@@ -136,7 +135,7 @@ class PM3 {
     print('doResurrect $app');
 
     final hostURL = 'http://$pmHost:$pmPort';
-    print('connecting to $hostURL');
+    // print('connecting to $hostURL');
     IO.Socket socket = IO.io(hostURL, <String, dynamic>{
       'transports': ['websocket'],
     });
@@ -198,7 +197,7 @@ class PM3 {
       return;
     } else {
       final hostURL = 'http://$pmHost:$pmPort';
-      print('connecting to $hostURL');
+      // print('connecting to $hostURL');
       IO.Socket socket = IO.io(hostURL, <String, dynamic>{
         'transports': ['websocket'],
       });
@@ -520,7 +519,7 @@ class PM3 {
     await mustStateUp();
 
     final hostURL = 'http://$pmHost:$pmPort';
-    print('connecting to $hostURL');
+    // print('connecting to $hostURL');
     IO.Socket socket = IO.io(hostURL, <String, dynamic>{
       'transports': ['websocket'],
       // 'extraHeaders': {'foo': 'bar'}
@@ -543,7 +542,7 @@ class PM3 {
     await mustStateUp();
 
     final hostURL = 'http://$pmHost:$pmPort';
-    print('connecting to $hostURL');
+    // print('connecting to $hostURL');
     IO.Socket socket = IO.io(hostURL, <String, dynamic>{
       'transports': ['websocket'],
       // 'extraHeaders': {'foo': 'bar'}
@@ -570,7 +569,7 @@ class PM3 {
     await mustStateUp();
 
     final hostURL = 'http://$pmHost:$pmPort';
-    print('connecting to $hostURL');
+    // print('connecting to $hostURL');
     IO.Socket socket = IO.io(hostURL, <String, dynamic>{
       'transports': ['websocket'],
       // 'extraHeaders': {'foo': 'bar'}
@@ -593,7 +592,7 @@ class PM3 {
     await mustStateUp();
 
     final hostURL = 'http://$pmHost:$pmPort';
-    print('connecting to $hostURL');
+    // print('connecting to $hostURL');
     IO.Socket socket = IO.io(hostURL, <String, dynamic>{
       'transports': ['websocket'],
       // 'extraHeaders': {'foo': 'bar'}
@@ -617,7 +616,7 @@ class PM3 {
     var appConfig = await loadApp(configFile);
 
     final hostURL = 'http://$pmHost:$pmPort';
-    print('connecting to $hostURL');
+    // print('connecting to $hostURL');
     IO.Socket socket = IO.io(hostURL, <String, dynamic>{
       'transports': ['websocket'],
       // 'extraHeaders': {'foo': 'bar'}
@@ -643,7 +642,7 @@ class PM3 {
     Completer completer = Completer();
     await mustStateUp();
     final hostURL = 'http://$pmHost:$pmPort';
-    print('doList: connecting to $hostURL');
+    // print('doList: connecting to $hostURL');
     IO.Socket socket = IO.io(hostURL, <String, dynamic>{
       'transports': ['websocket'],
       // 'extraHeaders': {'foo': 'bar'}
@@ -662,7 +661,7 @@ class PM3 {
     Completer completer = Completer();
     await mustStateUp();
     final hostURL = 'http://$pmHost:$pmPort';
-    print('doSave: connecting to $hostURL');
+    // print('doSave: connecting to $hostURL');
     IO.Socket socket = IO.io(hostURL, <String, dynamic>{
       'transports': ['websocket'],
       // 'extraHeaders': {'foo': 'bar'}
@@ -689,7 +688,7 @@ class PM3 {
     Completer completer = Completer();
     await mustStateUp();
     final hostURL = 'http://$pmHost:$pmPort';
-    print('doLoad: connecting to $hostURL');
+    // print('doLoad: connecting to $hostURL');
     IO.Socket socket = IO.io(hostURL, <String, dynamic>{
       'transports': ['websocket'],
       // 'extraHeaders': {'foo': 'bar'}

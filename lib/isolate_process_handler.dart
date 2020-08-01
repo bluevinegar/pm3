@@ -56,6 +56,27 @@ class IsolateProcessHandler {
   }
 
   log({lastLineIndex = 100}) async {
+    final name = config['name'];
+    if (Platform.isLinux || Platform.isMacOS) {
+      await Process.start('tail', ['-n', lastLineIndex.toString(), logStd.path],
+              mode: ProcessStartMode.normal)
+          .then((Process proc) {
+        proc.stdout.transform(utf8.decoder).listen((data) {
+          print("IPH: $name tail: $data");
+          mainSendPort.send('log:$data\n');
+        });
+        proc.stderr.transform(utf8.decoder).listen((data) {
+          print("IPH: $name tail error: $data");
+        });
+        proc.exitCode.then((exitCode) {
+          print('IPH: $name: tail exit: $exitCode');
+        });
+        sendLog = true;
+      });
+
+      return;
+    }
+
     final logReader = File(logStd.path);
     final stream = logReader
         .openRead()
