@@ -88,4 +88,11 @@ pm3 log <app_name>
 # vi /etc/rc.local
 cd /home/ubuntu/ && su ubuntu -c 'nohup pm3 start &'
 su ubuntu -c 'sleep 3 && pm3 resurrect'
+
+or 
+
+# vi /etc/rc.local
+cd /home/ubuntu && su ubuntu -c 'pm3 boot'
+
+
 ```
