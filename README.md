@@ -42,6 +42,20 @@ Example
 pm3 start app.json
 ```
 
+app.json
+
+```
+{
+  "name": "app1",
+  "script": "npx",
+  "cwd": "/home/ubuntu/app1",
+  "args": "babel-node server.js",
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
+```
+
 To save running process for persisted restart:
 ```
 pm3 save
