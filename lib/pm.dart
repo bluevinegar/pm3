@@ -364,17 +364,21 @@ class PM3 {
             }
           }
         } else if (data.startsWith('log:')) {
-          print("mainSendPort received log:");
-          await p.handler.logClientHandlers.forEach((LogRequester logClient) {
-            logClient.clientHandler.emit('log', data.replaceFirst('log:', ''));
-          });
-          print("mainSendPort done emit log to clients");
+          // print("mainSendPort received log:");
+          if (p != null) {
+            await p.handler.logClientHandlers.forEach((LogRequester logClient) {
+              logClient.clientHandler
+                  .emit('log', data.replaceFirst('log:', ''));
+            });
+            // print("mainSendPort done emit log to clients");
+          }
         } else if (data.startsWith('logErr:')) {
-          await p.handler.logClientHandlers.forEach((LogRequester logClient) {
-            final Colorize logLine = Colorize(data.replaceFirst('log:', ''))
-              ..red();
-            logClient.clientHandler.emit('logErr', logLine);
-          });
+          if (p != null) {
+            await p.handler.logClientHandlers.forEach((LogRequester logClient) {
+              logClient.clientHandler
+                  .emit('logErr', data.replaceFirst('logErr:', ''));
+            });
+          }
         }
       }
 
@@ -441,14 +445,19 @@ class PM3 {
     }
   }
 
-  serverDoLog(String app, Socket handler) async {
+  //logType: std / error
+  serverDoLog(String app, Socket handler, {logType: 'std'}) async {
     print('serverDoLog app:${app}');
     if (!comm.containsKey(app)) {
       throw 'App missing $app';
     }
     print('serverDoLog app: $app sending socket');
     comm[app].handler.logClientHandlers.add(LogRequester(handler));
-    await comm[app].childSendPort.send('log');
+    if (logType == 'error') {
+      await comm[app].childSendPort.send('log:error');
+    } else {
+      await comm[app].childSendPort.send('log');
+    }
   }
 
   serverDoStop(String app) async {
@@ -538,7 +547,7 @@ class PM3 {
     socketHandleList(socket);
   }
 
-  Future doLog(String app) async {
+  Future doLog(String app, List<String> args) async {
     await mustStateUp();
 
     final hostURL = 'http://$pmHost:$pmPort';
@@ -548,13 +557,13 @@ class PM3 {
       // 'extraHeaders': {'foo': 'bar'}
     });
     socket.on('connect', (_) {
-      socket.emit('log', app);
+      socket.emit('log', [app, args]);
     });
     socket.on('log', (data) async {
       stdout.write(data);
       // print(data);
     });
-    socket.on('errLog', (data) async {
+    socket.on('logErr', (data) async {
       Colorize cStr = Colorize(data)..red();
       stdout.write(cStr);
       // print(cStr);

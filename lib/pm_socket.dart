@@ -12,7 +12,7 @@ startSocketServer(PM3 app) async {
     // final headers = client.handshake['headers'];
     // headers.forEach((k, v) => print('$k => $v'));
     client.on('msg', (data) async {
-      print('client says: $data');
+      print('pmSocket: msg: $data');
       switch (data) {
         case 'list':
           client.emit('list', app.processors);
@@ -52,7 +52,7 @@ startSocketServer(PM3 app) async {
     client.on('start', (data) async {
       try {
         await app.serverDoStart(data);
-        print('app.serverDoStart done');
+        print('pmSocket: app.serverDoStart done');
         client.emit('startResult', []);
       } catch (err) {
         client.emit('startError', [err.toString()]);
@@ -97,37 +97,49 @@ startSocketServer(PM3 app) async {
 
     client.on('log', (data) async {
       try {
-        await app.serverDoLog(data, client);
+        print("pmSocket: log $data");
+        List<dynamic> cmds = data;
+        String name = cmds[0];
+        List<String> args = [];
+        if (cmds.length > 1) {
+          cmds[1].forEach((arg) {
+            args.add(arg.toString());
+          });
+        }
+        print("pmSocket: log args: $args");
+        final logType = args.contains('--error') ? 'error' : 'std';
+        print("pmSocket: log logType: $logType");
+        await app.serverDoLog(name, client, logType: logType);
         // client.emit('logResult', []);
       } catch (err, stack) {
-        print('log-error! $err | ${stack.toString()}');
+        print('pmSocket: log-error! $err | ${stack.toString()}');
         client.emit('logError', [err.toString()]);
       }
     });
 
     client.on('disconnect', (data) async {
       app.serverClientDisconnect(client);
-      print('client dc');
+      print('pmSocket: client dc');
     });
   });
 
   if (!Platform.isWindows) {
     ProcessSignal.sigterm.watch().listen((event) async {
-      print('sigterm $event');
+      print('pmSocket: sigterm $event');
       try {
         await app.serverDoDelete('all');
       } catch (err) {
-        print('sighup stop all error $err');
+        print('pmSocket: sighup stop all error $err');
       }
       exit(0);
     });
   } else {
     ProcessSignal.sighup.watch().listen((event) async {
-      print('sighup $event');
+      print('pmSocket: sighup $event');
       try {
         await app.serverDoDelete('all');
       } catch (err) {
-        print('sighup stop all error $err');
+        print('pmSocket: sighup stop all error $err');
       }
       exit(0);
     });

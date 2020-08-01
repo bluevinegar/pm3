@@ -36,7 +36,7 @@ pm3 restart <app_name>|'all'
 pm3 delete <app_name>|'all'
 ```
 
-Example
+## Example
 
 ```
 pm3 start app.json
@@ -76,10 +76,16 @@ pm3 resurrect# loads saved processes
 ```
 
 
-To view logs:
+## To view logs:
 
 ```
-pm3 log <app_name>
+pm3 log <app_name> --lines 200
+```
+
+for error log
+
+```
+pm3 log <app_name> --error
 ```
 
 # process flow
