@@ -475,7 +475,7 @@ class PM3 {
   }
 
   //logType: std / error
-  serverDoLog(String app, Socket handler, {logType: 'std'}) async {
+  serverDoLog(String app, Socket handler, {logType: 'std', lines: 20}) async {
     print('serverDoLog app:${app}');
     if (!comm.containsKey(app)) {
       throw 'App missing $app';
@@ -486,7 +486,7 @@ class PM3 {
         .logClientHandlers
         .add(LogRequester(handler, logType: logType));
 
-    await comm[app].childSendPort.send('log');
+    await comm[app].childSendPort.send('log:$logType:$lines');
   }
 
   serverDoStop(String app) async {

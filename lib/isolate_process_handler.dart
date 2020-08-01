@@ -104,8 +104,11 @@ class IsolateProcessHandler {
 
     try {
       final name = config['name'];
-      await sendLogFile(name, lastLineIndex, 'logStart:', logStd.path);
-      await sendLogFile(name, lastLineIndex, 'logErrStart:', logErr.path);
+      if (errorOnly) {
+        await sendLogFile(name, lastLineIndex, 'logErrStart:', logErr.path);
+      } else {
+        await sendLogFile(name, lastLineIndex, 'logStart:', logStd.path);
+      }
       sendLog = true;
     } catch (err) {
       rethrow;
@@ -263,8 +266,10 @@ class IsolateProcessHandler {
           if (data is String) {
             if (data.startsWith('log')) {
               print('IPH: $name log? $data');
-              final errorOnly = data.contains(':error');
-              await log(errorOnly: errorOnly);
+              final logCmd = data.split(':');
+              final errorOnly = logCmd[1] == 'error';
+              final lines = int.parse(logCmd[2]);
+              await log(errorOnly: errorOnly, lastLineIndex: lines);
 
               return;
             }

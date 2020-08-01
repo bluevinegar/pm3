@@ -101,15 +101,22 @@ startSocketServer(PM3 app) async {
         List<dynamic> cmds = data;
         String name = cmds[0];
         List<String> args = [];
+        int lines = 20;
         if (cmds.length > 1) {
-          cmds[1].forEach((arg) {
-            args.add(arg.toString());
-          });
+          for (var c = 0; c < cmds[1].length; c++) {
+            final arg = cmds[1][c].toString();
+            if (arg == '--line' || arg == '--lines') {
+              if (cmds[1].length > c + 1) {
+                lines = int.parse(cmds[1][c + 1]);
+              }
+            }
+            args.add(arg);
+          }
         }
         print("pmSocket: log args: $args");
         final logType = args.contains('--error') ? 'error' : 'std';
         print("pmSocket: log logType: $logType");
-        await app.serverDoLog(name, client, logType: logType);
+        await app.serverDoLog(name, client, logType: logType, lines: lines);
         // client.emit('logResult', []);
       } catch (err, stack) {
         print('pmSocket: log-error! $err | ${stack.toString()}');
