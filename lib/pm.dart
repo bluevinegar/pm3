@@ -363,10 +363,39 @@ class PM3 {
               break;
             }
           }
+        } else if (data.startsWith('logStart:')) {
+          if (p != null) {
+            await p.handler.logClientHandlers.forEach((LogRequester logClient) {
+              if (logClient.logType == 'error') {
+                return; // do not send
+              }
+              if (logClient.started) {
+                return; // not for this
+              }
+              logClient.clientHandler
+                  .emit('log', data.replaceFirst('logStart:', ''));
+              logClient.started = true;
+            });
+            // print("mainSendPort done emit log to clients");
+          }
+        } else if (data.startsWith('logErrStart:')) {
+          if (p != null) {
+            await p.handler.logClientHandlers.forEach((LogRequester logClient) {
+              if (logClient.started) {
+                return; // not for this
+              }
+              logClient.clientHandler
+                  .emit('logErr', data.replaceFirst('logErrStart:', ''));
+              logClient.started = true;
+            });
+          }
         } else if (data.startsWith('log:')) {
           // print("mainSendPort received log:");
           if (p != null) {
             await p.handler.logClientHandlers.forEach((LogRequester logClient) {
+              if (logClient.logType == 'error') {
+                return; //do not send
+              }
               logClient.clientHandler
                   .emit('log', data.replaceFirst('log:', ''));
             });
@@ -452,12 +481,12 @@ class PM3 {
       throw 'App missing $app';
     }
     print('serverDoLog app: $app sending socket');
-    comm[app].handler.logClientHandlers.add(LogRequester(handler));
-    if (logType == 'error') {
-      await comm[app].childSendPort.send('log:error');
-    } else {
-      await comm[app].childSendPort.send('log');
-    }
+    comm[app]
+        .handler
+        .logClientHandlers
+        .add(LogRequester(handler, logType: logType));
+
+    await comm[app].childSendPort.send('log');
   }
 
   serverDoStop(String app) async {
