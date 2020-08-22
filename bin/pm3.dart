@@ -62,7 +62,7 @@ main(List<String> args) async {
     case 'log':
       final List<String> cmdArgs = args.length > 1 ? args.skip(1).toList() : [];
       final app = cmdArgs.length > 0 ? cmdArgs[0] : '';
-      await pm.doLog(app);
+      await pm.doLog(app, cmdArgs.length > 1 ? cmdArgs.skip(1).toList() : []);
       break;
     case 'list':
       await pm.doList(cmd, args.skip(1).toList());

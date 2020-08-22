@@ -36,10 +36,24 @@ pm3 restart <app_name>|'all'
 pm3 delete <app_name>|'all'
 ```
 
-Example
+## Example
 
 ```
 pm3 start app.json
+```
+
+app.json
+
+```
+{
+  "name": "app1",
+  "script": "npx",
+  "cwd": "/home/ubuntu/app1",
+  "args": "babel-node server.js",
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
 ```
 
 To save running process for persisted restart:
@@ -62,10 +76,16 @@ pm3 resurrect# loads saved processes
 ```
 
 
-To view logs:
+## To view logs:
 
 ```
-pm3 log <app_name>
+pm3 log <app_name> --lines 200
+```
+
+for error log
+
+```
+pm3 log <app_name> --error
 ```
 
 # process flow
@@ -90,8 +110,20 @@ cd /home/ubuntu/ && su ubuntu -c 'nohup pm3 start &'
 su ubuntu -c 'sleep 3 && pm3 resurrect'
 ```
 
+or 
+
+```
+# vi /etc/rc.local
+cd /home/ubuntu && su ubuntu -c 'pm3 boot'
+
+
+```
+
 # Support
 
 Community Support: 
 
 [https://gitter.im/bvpm3/community#](https://gitter.im/bvpm3/community#)
+
+
+

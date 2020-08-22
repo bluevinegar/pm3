@@ -135,7 +135,7 @@ class PM3 {
     print('doResurrect $app');
 
     final hostURL = 'http://$pmHost:$pmPort';
-    print('connecting to $hostURL');
+    // print('connecting to $hostURL');
     IO.Socket socket = IO.io(hostURL, <String, dynamic>{
       'transports': ['websocket'],
     });
@@ -197,7 +197,7 @@ class PM3 {
       return;
     } else {
       final hostURL = 'http://$pmHost:$pmPort';
-      print('connecting to $hostURL');
+      // print('connecting to $hostURL');
       IO.Socket socket = IO.io(hostURL, <String, dynamic>{
         'transports': ['websocket'],
       });
@@ -363,17 +363,51 @@ class PM3 {
               break;
             }
           }
+        } else if (data.startsWith('logStart:')) {
+          if (p != null) {
+            await p.handler.logClientHandlers.forEach((LogRequester logClient) {
+              if (logClient.logType == 'error') {
+                return; // do not send
+              }
+              if (logClient.started) {
+                return; // not for this
+              }
+              logClient.clientHandler
+                  .emit('log', data.replaceFirst('logStart:', ''));
+              logClient.started = true;
+            });
+            // print("mainSendPort done emit log to clients");
+          }
+        } else if (data.startsWith('logErrStart:')) {
+          if (p != null) {
+            await p.handler.logClientHandlers.forEach((LogRequester logClient) {
+              if (logClient.started) {
+                return; // not for this
+              }
+              logClient.clientHandler
+                  .emit('logErr', data.replaceFirst('logErrStart:', ''));
+              logClient.started = true;
+            });
+          }
         } else if (data.startsWith('log:')) {
-          print("mainSendPort received log:");
-          await p.handler.logClientHandlers.forEach((LogRequester logClient) {
-            logClient.clientHandler.emit('log', data.replaceFirst('log:', ''));
-          });
-          print("mainSendPort done emit log to clients");
+          // print("mainSendPort received log:");
+          if (p != null) {
+            await p.handler.logClientHandlers.forEach((LogRequester logClient) {
+              if (logClient.logType == 'error') {
+                return; //do not send
+              }
+              logClient.clientHandler
+                  .emit('log', data.replaceFirst('log:', ''));
+            });
+            // print("mainSendPort done emit log to clients");
+          }
         } else if (data.startsWith('logErr:')) {
-          await p.handler.logClientHandlers.forEach((LogRequester logClient) {
-            logClient.clientHandler
-                .emit('logErr', data.replaceFirst('log:', ''));
-          });
+          if (p != null) {
+            await p.handler.logClientHandlers.forEach((LogRequester logClient) {
+              logClient.clientHandler
+                  .emit('logErr', data.replaceFirst('logErr:', ''));
+            });
+          }
         }
       }
 
@@ -440,14 +474,19 @@ class PM3 {
     }
   }
 
-  serverDoLog(String app, Socket handler) async {
+  //logType: std / error
+  serverDoLog(String app, Socket handler, {logType: 'std', lines: 20}) async {
     print('serverDoLog app:${app}');
     if (!comm.containsKey(app)) {
       throw 'App missing $app';
     }
     print('serverDoLog app: $app sending socket');
-    comm[app].handler.logClientHandlers.add(LogRequester(handler));
-    await comm[app].childSendPort.send('log');
+    comm[app]
+        .handler
+        .logClientHandlers
+        .add(LogRequester(handler, logType: logType));
+
+    await comm[app].childSendPort.send('log:$logType:$lines');
   }
 
   serverDoStop(String app) async {
@@ -504,10 +543,10 @@ class PM3 {
       if (processors[c]['name'] == app || app == 'all') {
         processIndex = c;
         processors[processIndex]['status'] = 'stopped';
+        processors[processIndex]['ended'] = false;
         await comm[processors[processIndex]['name']]
             .childSendPort
             .send('restart');
-        processors[processIndex]['ended'] = false;
 
         if (app != 'all') break;
       }
@@ -518,7 +557,7 @@ class PM3 {
     await mustStateUp();
 
     final hostURL = 'http://$pmHost:$pmPort';
-    print('connecting to $hostURL');
+    // print('connecting to $hostURL');
     IO.Socket socket = IO.io(hostURL, <String, dynamic>{
       'transports': ['websocket'],
       // 'extraHeaders': {'foo': 'bar'}
@@ -537,23 +576,23 @@ class PM3 {
     socketHandleList(socket);
   }
 
-  Future doLog(String app) async {
+  Future doLog(String app, List<String> args) async {
     await mustStateUp();
 
     final hostURL = 'http://$pmHost:$pmPort';
-    print('connecting to $hostURL');
+    // print('connecting to $hostURL');
     IO.Socket socket = IO.io(hostURL, <String, dynamic>{
       'transports': ['websocket'],
       // 'extraHeaders': {'foo': 'bar'}
     });
     socket.on('connect', (_) {
-      socket.emit('log', app);
+      socket.emit('log', [app, args]);
     });
     socket.on('log', (data) async {
       stdout.write(data);
       // print(data);
     });
-    socket.on('errLog', (data) async {
+    socket.on('logErr', (data) async {
       Colorize cStr = Colorize(data)..red();
       stdout.write(cStr);
       // print(cStr);
@@ -568,7 +607,7 @@ class PM3 {
     await mustStateUp();
 
     final hostURL = 'http://$pmHost:$pmPort';
-    print('connecting to $hostURL');
+    // print('connecting to $hostURL');
     IO.Socket socket = IO.io(hostURL, <String, dynamic>{
       'transports': ['websocket'],
       // 'extraHeaders': {'foo': 'bar'}
@@ -591,7 +630,7 @@ class PM3 {
     await mustStateUp();
 
     final hostURL = 'http://$pmHost:$pmPort';
-    print('connecting to $hostURL');
+    // print('connecting to $hostURL');
     IO.Socket socket = IO.io(hostURL, <String, dynamic>{
       'transports': ['websocket'],
       // 'extraHeaders': {'foo': 'bar'}
@@ -615,7 +654,7 @@ class PM3 {
     var appConfig = await loadApp(configFile);
 
     final hostURL = 'http://$pmHost:$pmPort';
-    print('connecting to $hostURL');
+    // print('connecting to $hostURL');
     IO.Socket socket = IO.io(hostURL, <String, dynamic>{
       'transports': ['websocket'],
       // 'extraHeaders': {'foo': 'bar'}
@@ -641,7 +680,7 @@ class PM3 {
     Completer completer = Completer();
     await mustStateUp();
     final hostURL = 'http://$pmHost:$pmPort';
-    print('doList: connecting to $hostURL');
+    // print('doList: connecting to $hostURL');
     IO.Socket socket = IO.io(hostURL, <String, dynamic>{
       'transports': ['websocket'],
       // 'extraHeaders': {'foo': 'bar'}
@@ -660,7 +699,7 @@ class PM3 {
     Completer completer = Completer();
     await mustStateUp();
     final hostURL = 'http://$pmHost:$pmPort';
-    print('doSave: connecting to $hostURL');
+    // print('doSave: connecting to $hostURL');
     IO.Socket socket = IO.io(hostURL, <String, dynamic>{
       'transports': ['websocket'],
       // 'extraHeaders': {'foo': 'bar'}
@@ -687,7 +726,7 @@ class PM3 {
     Completer completer = Completer();
     await mustStateUp();
     final hostURL = 'http://$pmHost:$pmPort';
-    print('doLoad: connecting to $hostURL');
+    // print('doLoad: connecting to $hostURL');
     IO.Socket socket = IO.io(hostURL, <String, dynamic>{
       'transports': ['websocket'],
       // 'extraHeaders': {'foo': 'bar'}

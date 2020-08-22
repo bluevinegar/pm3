@@ -1,15 +1,19 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'package:pm3/util/date.dart';
 import 'package:pm3/util/process.dart';
 import 'package:socket_io/socket_io.dart' as socketIO;
 import 'package:mutex/mutex.dart';
 
 Mutex processMutex = Mutex();
+Mutex logStartMutex = Mutex();
 
 class LogRequester {
   socketIO.Socket clientHandler;
-  LogRequester(this.clientHandler);
+  String logType;
+  bool started = false;
+  LogRequester(this.clientHandler, {this.logType = 'std'});
 }
 
 class IsolateProcessHandler {
@@ -55,7 +59,27 @@ class IsolateProcessHandler {
     return state == 'running';
   }
 
-  log({lastLineIndex = 100}) async {
+  sendLogFile(
+      String name, int lastLineIndex, String logPrefix, String logFile) async {
+    if (Platform.isLinux || Platform.isMacOS) {
+      await Process.start('tail', ['-n', lastLineIndex.toString(), logFile],
+              mode: ProcessStartMode.normal)
+          .then((Process proc) {
+        proc.stdout.transform(utf8.decoder).listen((data) {
+          print("IPH: $name tail: $data");
+          mainSendPort.send('$logPrefix$data\n');
+        });
+        proc.stderr.transform(utf8.decoder).listen((data) {
+          print("IPH: $name tail error: $data");
+        });
+        proc.exitCode.then((exitCode) {
+          print('IPH: $name: tail exit: $exitCode');
+        });
+      });
+
+      return;
+    }
+
     final logReader = File(logStd.path);
     final stream = logReader
         .openRead()
@@ -70,9 +94,27 @@ class IsolateProcessHandler {
     }
     lines.forEach((log) {
       // clientHandler.emit('log', log);
-      mainSendPort.send('log:$log\n');
+      mainSendPort.send('$logPrefix$log\n');
     });
-    sendLog = true;
+  }
+
+  log({lastLineIndex = 20, errorOnly: false}) async {
+    //allow singular logging at 1 time to avoid sending logging to 2 different log request concurrently that did not finish
+    await logStartMutex.acquire();
+
+    try {
+      final name = config['name'];
+      if (errorOnly) {
+        await sendLogFile(name, lastLineIndex, 'logErrStart:', logErr.path);
+      } else {
+        await sendLogFile(name, lastLineIndex, 'logStart:', logStd.path);
+      }
+      sendLog = true;
+    } catch (err) {
+      rethrow;
+    } finally {
+      await logStartMutex.release();
+    }
   }
 
   start() async {
@@ -97,7 +139,7 @@ class IsolateProcessHandler {
     final List<String> processArgs = args == null ? [] : args.split(' ');
 
     print('IPH: starting $name $script args: ${processArgs} (cwd:$cwd)');
-    mainSendPort.send('log:starting $name args: $processArgs (cwd:$cwd)');
+    mainSendPort.send('log:starting $name args: $processArgs (cwd:$cwd)\n');
     // print('IPH: starting $name sent starting log');
     try {
       await Process.start(script, processArgs,
@@ -109,29 +151,44 @@ class IsolateProcessHandler {
         mainSendPort.send('started:${process.pid}');
         print("sent to main started");
         process.stdout.transform(utf8.decoder).listen((data) {
-          print("stdout $data");
-          logStd.writeAsStringSync(data, mode: FileMode.append);
+          // print("stdout $data");
+          final nowFormatted = logFormattedNow();
+          logStd.writeAsStringSync(nowFormatted + ' ' + data,
+              mode: FileMode.append);
           if (sendLog) {
-            print('IPH: $name: emitLog');
+            // print('IPH: $name: emitLog');
             // clientHandler.emit('log', data);
-            mainSendPort.send('log:$data');
+            mainSendPort.send('log:$nowFormatted $data');
           }
-          print('IPH: $name: $data');
+          stdout.write('IPH: $name: stdout: $data');
         });
         process.stderr.transform(utf8.decoder).listen((data) {
-          print("stderr $data");
-          logStd.writeAsStringSync(data, mode: FileMode.append);
-          logErr.writeAsStringSync(data, mode: FileMode.append);
+          // print("stderr $data");
+          final nowFormatted = logFormattedNow();
+          logStd.writeAsStringSync(nowFormatted + ' ' + data,
+              mode: FileMode.append);
+          logErr.writeAsStringSync(nowFormatted + ' ' + data,
+              mode: FileMode.append);
           if (sendLog) {
             // clientHandler.emit('logErr', data);
-            mainSendPort.send('logErr:$data');
+            mainSendPort.send('logErr:$nowFormatted $data');
           }
-          print('IPH: $name: error: $data');
+          stdout.write('IPH: $name: stderr: $data');
         });
         process.exitCode.then((exitCode) {
           print('IPH: $name: exit: $exitCode');
           state = 'stopped';
-          logStd.writeAsStringSync('exit:$exitCode\n', mode: FileMode.append);
+          final nowFormatted = logFormattedNow();
+
+          logStd.writeAsStringSync(nowFormatted + ' ' + 'exit:$exitCode\n',
+              mode: FileMode.append);
+          if (exitCode != 0) {
+            logErr.writeAsStringSync(nowFormatted + ' ' + 'exit:$exitCode\n',
+                mode: FileMode.append);
+            mainSendPort.send('logErr:$nowFormatted exit:$exitCode\n');
+          } else {
+            mainSendPort.send('log:$nowFormatted exit:$exitCode\n');
+          }
           config['status'] = 'stopped';
           config['pid'] = -1;
           // config['pid'] = process.pid;
@@ -146,7 +203,12 @@ class IsolateProcessHandler {
     }
   }
 
-  stop() async {
+  logFormattedNow() {
+    final now = DateTime.now();
+    return timeFormat(now);
+  }
+
+  stop({bool end = true}) async {
     final name = config['name'];
     if (!isRunning) {
       print('IPH: $name already ended.');
@@ -162,16 +224,19 @@ class IsolateProcessHandler {
     }
     print('IPH: $name ended.');
     mainSendPort.send('ended');
-    ended = true;
+    state = 'stopped';
+    ended = end;
   }
 
   restart() async {
     final name = config['name'];
+    print('IPH: $name restart ended? ${ended}');
     if (!ended) {
-      print('restart: stopping $name...');
+      print('IPH: $name restart: stopping $name...');
       await stop();
+      ended = true;
     }
-    print('restart: starting $name...');
+    print('IPH: $name restart: starting $name...');
     return await start();
   }
 
@@ -199,6 +264,15 @@ class IsolateProcessHandler {
             return;
           }
           if (data is String) {
+            if (data.startsWith('log')) {
+              print('IPH: $name log? $data');
+              final logCmd = data.split(':');
+              final errorOnly = logCmd[1] == 'error';
+              final lines = int.parse(logCmd[2]);
+              await log(errorOnly: errorOnly, lastLineIndex: lines);
+
+              return;
+            }
             switch (data) {
               case 'tick':
                 break;
@@ -222,10 +296,6 @@ class IsolateProcessHandler {
               case 'delete':
                 await delete();
                 print('IPH: $name: deleted');
-                break;
-
-              case 'log':
-                await log();
                 break;
 
               default:

@@ -1,0 +1,8 @@
+{
+  "name": "app5",
+  "script": "npx",
+  "args": "node sample/app1.js",
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
