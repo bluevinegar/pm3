@@ -89,3 +89,9 @@ pm3 log <app_name>
 cd /home/ubuntu/ && su ubuntu -c 'nohup pm3 start &'
 su ubuntu -c 'sleep 3 && pm3 resurrect'
 ```
+
+# Support
+
+Community Support: 
+
+[https://gitter.im/bvpm3/community#](https://gitter.im/bvpm3/community#)
