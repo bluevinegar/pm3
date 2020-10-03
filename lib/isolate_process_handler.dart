@@ -124,7 +124,9 @@ class IsolateProcessHandler {
       return;
     }
     ended = false;
-    final script = config['script'];
+    String script = config['script'];
+    final String execInterpreter = config['exec_interpreter'];
+    final String execPath = config['pm_exec_path'];
     final args = config['args'];
     final cwd = config['cwd'] ?? Directory.current.path;
     final env = <String, String>{};
@@ -136,10 +138,34 @@ class IsolateProcessHandler {
       }
     }
 
-    final List<String> processArgs = args == null ? [] : args.split(' ');
+    final List<String> processArgs = [];
 
-    print('IPH: starting $name $script args: ${processArgs} (cwd:$cwd)');
-    mainSendPort.send('log:starting $name args: $processArgs (cwd:$cwd)\n');
+    if (execInterpreter != null && execInterpreter.isNotEmpty) {
+      if (script == null || script.isEmpty) {
+        script = execInterpreter;
+      } else {
+        processArgs.add(execInterpreter);
+      }
+    }
+
+    if (execPath != null && execPath.isNotEmpty) {
+      processArgs.add(execPath);
+    }
+
+    if (args != null) {
+      if (args is String) {
+        processArgs.addAll(args.split(' '));
+      } else if (args is List) {
+        print('IPH: starting $name $script args is list');
+        processArgs.addAll(args.map((e) => e as String).toList());
+      } else {
+        throw 'Unknown args $args';
+      }
+    }
+
+    print('IPH: starting $name script $script args: ${processArgs} (cwd:$cwd)');
+    mainSendPort.send(
+        'log:starting $name script $script args: $processArgs (cwd:$cwd)\n');
     // print('IPH: starting $name sent starting log');
     try {
       await Process.start(script, processArgs,
