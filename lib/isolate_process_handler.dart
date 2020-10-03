@@ -128,7 +128,8 @@ class IsolateProcessHandler {
     final String execInterpreter = config['exec_interpreter'];
     final String execPath = config['pm_exec_path'];
     final args = config['args'];
-    final cwd = config['cwd'] ?? Directory.current.path;
+    final pmCWD = config['pm_cwd'] ?? Directory.current.path;
+    final cwd = config['cwd'] ?? pmCWD;
     final env = <String, String>{};
 
     if (config.containsKey('env')) {
@@ -143,6 +144,9 @@ class IsolateProcessHandler {
     if (execInterpreter != null && execInterpreter.isNotEmpty) {
       if (script == null || script.isEmpty) {
         script = execInterpreter;
+        // if (script.startsWith('.')) {
+        //   script = cwd + '/' + script;
+        // }
       } else {
         processArgs.add(execInterpreter);
       }
